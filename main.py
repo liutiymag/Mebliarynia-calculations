@@ -74,9 +74,12 @@ async def async_telegram_bot(request):
         text = update.message.text.strip()
 
         # Перевірка, чи є користувач активним підписником Zenedu
+        await bot.send_message(chat_id=chat_id, text="Зачекайте, будь ласка. Йде перевірка підписки... "
+        "(може зайняти до 1 хвилини)")
         active_subscribers = get_active_zenedu_subscribers()
         if user_id not in active_subscribers:
-            await bot.send_message(chat_id=chat_id, text="Ви не маєте доступу до цього бота.")
+            await bot.send_message(chat_id=chat_id, text="Ви не маєте доступу до цього бота. " \
+            "Ботом можуть користуватися лише підписники курсу https://mebliarynia.com.ua/")
             return "OK"
         
         # Обробка команд
