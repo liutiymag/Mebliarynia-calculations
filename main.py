@@ -50,15 +50,18 @@ def get_active_zenedu_subscribers():
     }
 
     while url:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, params={'per_page': '100'}, headers=headers)
         if response.status_code == 200:
             data = response.json()
             for subscriber in data.get('data', []):
-                if subscriber.get('is_active') is True and subscriber.get('user_id'):
-                    active_subscribers.append(subscriber['user_id'])
+                if subscriber.get('is_active') is True and subscriber.get('is_blocked') is False:
+                    active_subscribers.append(subscriber.get('user_id'))
             url = data.get('links', {}).get('next')
         else:
             # Handle error
+            print(f"Error: {response.url}")
+            print(f"Error: {response.status_code}")
+            print(f"Error message: {response.text}")
             url = None
     return active_subscribers
 
