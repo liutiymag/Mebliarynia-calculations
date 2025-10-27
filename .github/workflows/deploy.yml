@@ -8,45 +8,54 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+      # 1️⃣ Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Deploy function
-      id: deploy
-      run: |-
-        gcloud functions deploy telegram_bot \
-          --runtime python311 \
-          --trigger-http \
-          --allow-unauthenticated \
-          --entry-point telegram_bot \
-          --source . \
-          --region us-central1 \
-          --set-env-vars TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }},ZENEDU_API_TOKEN=${{ secrets.ZENEDU_API_TOKEN }},ZENEDU_BOT_ID=${{ secrets.ZENEDU_BOT_ID }}
+      # 2️⃣ Install gcloud CLI
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Get function URL
-      id: get_url
-      run: |
-        URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(https.url)')
-        echo "url=$URL" >> $GITHUB_OUTPUT
+      # 3️⃣ Deploy function
+      - name: Deploy function
+        id: deploy
+        run: |
+          gcloud functions deploy telegram_bot \
+            --runtime python311 \
+            --trigger-http \
+            --allow-unauthenticated \
+            --entry-point telegram_bot \
+            --source . \
+            --region us-central1 \
+            --set-env-vars TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }},ZENEDU_API_TOKEN=${{ secrets.ZENEDU_API_TOKEN }},ZENEDU_BOT_ID=${{ secrets.ZENEDU_BOT_ID }}
 
-    - name: Test function endpoint
-      run: |
-        STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.get_url.outputs.url }}")
-        BODY=$(curl -s "${{ steps.get_url.outputs.url }}")
-        if [ "$STATUS_CODE" -ne 200 ]; then
-          echo "Error: Expected status code 200, but got $STATUS_CODE"
-          exit 1
-        fi
-        if [ "$BODY" != "OK" ]; then
-          echo "Error: Expected body 'OK', but got '$BODY'"
-          exit 1
-        fi
-        echo "Function test passed!"
+      # 4️⃣ Get deployed function URL
+      - name: Get function URL
+        id: get_url
+        run: |
+          URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(httpsTrigger.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      # 5️⃣ Test the deployed function
+      - name: Test function endpoint
+        run: |
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.get_url.outputs.url }}")
+          BODY=$(curl -s "${{ steps.get_url.outputs.url }}")
+          if [ "$STATUS_CODE" -ne 200 ]; then
+            echo "❌ Error: Expected status code 200, but got $STATUS_CODE"
+            exit 1
+          fi
+          if [ "$BODY" != "OK" ]; then
+            echo "❌ Error: Expected body 'OK', but got '$BODY'"
+            exit 1
+          fi
+          echo "✅ Function test passed!"
