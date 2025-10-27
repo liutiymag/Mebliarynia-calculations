@@ -58,4 +58,4 @@ jobs:
             echo "❌ Error: Expected body 'OK', but got '$BODY'"
             exit 1
           fi
-          echo "✅ Function test passed!"
+          echo "✅ Function test PASSED!"
