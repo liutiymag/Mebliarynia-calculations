@@ -1,0 +1,52 @@
+name: Deploy to Google Cloud Functions
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Deploy function
+      id: deploy
+      run: |-
+        gcloud functions deploy telegram_bot \
+          --runtime python311 \
+          --trigger-http \
+          --allow-unauthenticated \
+          --entry-point telegram_bot \
+          --source . \
+          --region us-central1 \
+          --set-env-vars TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }},ZENEDU_API_TOKEN=${{ secrets.ZENEDU_API_TOKEN }},ZENEDU_BOT_ID=${{ secrets.ZENEDU_BOT_ID }}
+
+    - name: Get function URL
+      id: get_url
+      run: |
+        URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(https.url)')
+        echo "url=$URL" >> $GITHUB_OUTPUT
+
+    - name: Test function endpoint
+      run: |
+        STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.get_url.outputs.url }}")
+        BODY=$(curl -s "${{ steps.get_url.outputs.url }}")
+        if [ "$STATUS_CODE" -ne 200 ]; then
+          echo "Error: Expected status code 200, but got $STATUS_CODE"
+          exit 1
+        fi
+        if [ "$BODY" != "OK" ]; then
+          echo "Error: Expected body 'OK', but got '$BODY'"
+          exit 1
+        fi
+        echo "Function test passed!"
