@@ -38,18 +38,17 @@ jobs:
             --region us-central1 \
             --set-env-vars TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }},ZENEDU_API_TOKEN=${{ secrets.ZENEDU_API_TOKEN }},ZENEDU_BOT_ID=${{ secrets.ZENEDU_BOT_ID }}
 
-      # 4️⃣ Get deployed function URL
-      - name: Get function URL
-        id: get_url
-        run: |
-          URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(httpsTrigger.url)')
-          echo "url=$URL" >> $GITHUB_OUTPUT
-
-      # 5️⃣ Test the deployed function
+      # 4️⃣ Test the deployed function
       - name: Test function endpoint
         run: |
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.get_url.outputs.url }}")
-          BODY=$(curl -s "${{ steps.get_url.outputs.url }}")
+          URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(httpsTrigger.url)')
+          if [ -z "$URL" ]; then
+            echo "❌ Error: Failed to get function URL."
+            exit 1
+          fi
+          echo "Testing URL: $URL"
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          BODY=$(curl -s "$URL")
           if [ "$STATUS_CODE" -ne 200 ]; then
             echo "❌ Error: Expected status code 200, but got $STATUS_CODE"
             exit 1
