@@ -41,6 +41,8 @@ jobs:
       # 4️⃣ Test the deployed function
       - name: Test function endpoint
         run: |
+          echo "Waiting for function to be ready..."
+          sleep 30
           URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(httpsTrigger.url)')
           if [ -z "$URL" ]; then
             echo "❌ Error: Failed to get function URL."
