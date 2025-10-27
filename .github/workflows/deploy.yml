@@ -42,10 +42,7 @@ jobs:
       - name: Get function URL
         id: get_url
         run: |
-          URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(httpsTrigger.url)')
-          if [ -z "$URL" ]; then
-            URL=$(gcloud functions describe telegram_bot --region us-central1 --format='value(uri)')
-          fi
+          URL=$(gcloud functions describe telegram_bot --gen2 --region us-central1 --format='value(serviceConfig.uri)')          
           if [ -z "$URL" ]; then
             echo "❌ Error: Could not find function URL."
             exit 1
