@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime, timedelta
 import requests
 import telegram
 
@@ -39,6 +40,7 @@ MATERIALS = {
 # Ініціалізуємо словник для зберігання даних про стан користувачів
 # Це простий приклад, для продакшн-версії краще використовувати базу даних
 user_states = {}
+user_last_check = {}
 
 def get_active_zenedu_subscribers():
     """Отримує список активних підписників Zenedu."""
@@ -76,17 +78,19 @@ async def async_telegram_bot(request):
         user_id = update.message.from_user.id
         text = update.message.text.strip()
 
-        # Перевірка, чи є користувач активним підписником Zenedu
-        await bot.send_message(chat_id=chat_id, text="Зачекайте, будь ласка. Йде перевірка підписки... "
-        "(може зайняти до 1 хвилини)")
-        active_subscribers = get_active_zenedu_subscribers()
-        if user_id not in active_subscribers:
-            await bot.send_message(chat_id=chat_id, text="Ви не маєте доступу до цього бота. " \
-            "Ботом можуть користуватися лише підписники курсу https://mebliarynia.com.ua/")
-            return "OK"
-        
         # Обробка команд
         if text == '/start':
+            # Перевірка, чи є користувач активним підписником Zenedu
+            if user_id not in user_last_check or datetime.now() - user_last_check[user_id] > timedelta(weeks=1):
+                await bot.send_message(chat_id=chat_id, text="Зачекайте, будь ласка. Йде перевірка підписки... "
+                "(може зайняти до 1 хвилини)")
+                active_subscribers = get_active_zenedu_subscribers()
+                if user_id not in active_subscribers:
+                    await bot.send_message(chat_id=chat_id, text="Ви не маєте доступу до цього бота. " \
+                    "Ботом можуть користуватися лише підписники курсу https://mebliarynia.com.ua/")
+                    return "OK"
+                user_last_check[user_id] = datetime.now()
+
             # Скидаємо стан користувача і починаємо нову розмову
             user_states[user_id] = {'step': 1, 'values': {}}
             materials_list_str = "Привіт! Я калькулятор потужності газліфту. Оберіть матеріал зі списку:\n"
@@ -94,7 +98,6 @@ async def async_telegram_bot(request):
                 materials_list_str += f"{key}. {value['title']}\n"
             materials_list_str += "Введіть номер матеріалу."
             await bot.send_message(chat_id=chat_id, text=materials_list_str)
-            return "OK"
 
         # Обробка даних
         if user_id in user_states:
