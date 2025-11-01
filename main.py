@@ -100,8 +100,9 @@ async def async_telegram_bot(request):
             materials_list_str = "Оберіть матеріал зі списку:\n"
             for key, value in MATERIALS.items():
                 materials_list_str += f"{key}. {value['title']}\n"
-            materials_list_str += "Введіть номер матеріалу."
+            materials_list_str += "\nВведіть номер матеріалу."
             await bot.send_message(chat_id=chat_id, text=materials_list_str)
+            return "OK"
 
         # Обробка даних
         if user_id in user_states:
