@@ -134,9 +134,9 @@ async def async_telegram_bot(request):
                     material_id = current_state['values']['material']
                     material_name = MATERIALS[material_id]['title']
                     density = MATERIALS[material_id]['density']
-                    height = current_state['values']['height']
-                    width = current_state['values']['width']
-                    thickness = current_state['values']['thickness']
+                    height = int(current_state['values']['height'])
+                    width = int(current_state['values']['width'])
+                    thickness = int(current_state['values']['thickness'])
                     
                     weight = density * height * width * thickness / 1000000
                     power = (weight * 9.81 * (height / 1000 / 2)) / (2 * 0.1 * 0.6)
