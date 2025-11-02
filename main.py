@@ -1,10 +1,11 @@
 import asyncio
 import os
-from datetime import datetime, timedelta
 import requests
 import telegram
+import time
 
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 
 load_dotenv()
@@ -93,7 +94,9 @@ async def async_telegram_bot(request):
                 await bot.send_message(chat_id=chat_id, text="Вітаю! Я бот від Mebliarynia для розрахунку ваги " \
                                         "фасадів із різноманітних матеріалів та сили газових амортизаторів " \
                                         "необхідних для вертикального відкриття")
+                time.sleep(1)
                 await bot.send_photo(chat_id=chat_id, photo=open('resources/gazovij-amortizator-hafele-80n-sribnij.jpg', 'rb'))
+                time.sleep(2)
 
             # Скидаємо стан користувача і починаємо нову розмову
             user_states[user_id] = {'step': 1, 'values': {}}
@@ -144,10 +147,13 @@ async def async_telegram_bot(request):
                     
                     await bot.send_message(chat_id=chat_id, text=f"Вага фасаду із матеріалу {material_name} у розмірах {height} на " \
                                            f"{width}, товщиною {thickness}: {weight:.2f} кг")
+                    time.sleep(2)
                     await bot.send_message(chat_id=chat_id, text=f"Рекомендована сила 1 амортизатора: {power:.2f} N")
+                    time.sleep(2)
                     await bot.send_message(chat_id=chat_id, text=f"Розрахунок проводився для парного встановлення амортизаторів. " \
                                             f"Обирайте товар із запасом сили 15%: {extra_power:.2f} N або найближчий доступний у більшу " \
                                             "сторону. Та не забувайте про безпружинні завіси.")
+                    time.sleep(1)
                     await bot.send_photo(chat_id=chat_id, photo=open('resources/b3572616cec8aae9b4ed2aa554915dc4-min-1.jpg', 'rb'))
                     await bot.send_message(chat_id=chat_id, text='Для нового розрахунку оберіть команду /start')
                     
